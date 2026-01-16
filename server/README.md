@@ -1,6 +1,6 @@
-# 🚀 DeepForgeX Server
+# 🚀 BlackMirror Server
 
-> Node.js backend API powering the DeepForgeX AI DeepFake Detection System
+> Node.js backend API powering the BlackMirror AI DeepFake Detection System
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-v4.18+-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
@@ -11,17 +11,16 @@
 
 ## 🎯 Overview
 
-The **DeepForgeX Server** is a robust RESTful API built with Node.js and Express.js. It handles authentication, file management, database operations, and seamless communication with the AI service.
+The **BlackMirror Server** is a robust RESTful API built with Node.js and Express.js. It handles authentication, file management, database operations, and seamless communication with the AI service.
 
 ### Key Features
 
-✨ **JWT Authentication** - Secure token-based auth with OTP verification  
+✨ **JWT Authentication** - Secure token-based auth <br/>
 📁 **File Management** - Cloudinary integration for media uploads  
 🔐 **Data Security** - Bcrypt encryption & input validation  
 📊 **MongoDB Integration** - Efficient data storage with Mongoose  
 🚦 **Rate Limiting** - Protection against abuse  
-📧 **Email Service** - Nodemailer for OTP delivery  
-🤖 **AI Integration** - Proxy to FastAPI ML service
+🤖 **AI Integration** - Proxy to Flask API ML service
 
 ---
 
@@ -36,7 +35,6 @@ The **DeepForgeX Server** is a robust RESTful API built with Node.js and Express
 ### Key Dependencies
 - **jsonwebtoken** - JWT authentication
 - **bcryptjs** - Password hashing
-- **nodemailer** - Email service
 - **cloudinary** - Media storage
 - **multer** - File upload handling
 - **cors** - Cross-origin resource sharing
@@ -50,34 +48,33 @@ The **DeepForgeX Server** is a robust RESTful API built with Node.js and Express
 
 ```
 server/
-├── config/
-│   ├── database.js          # MongoDB connection
+├── configs/
 │   ├── cloudinary.js        # Cloudinary setup
-│   └── email.js             # Email configuration
+│   ├── sendToken.js         # Token delivery
+│   └── token.js             # Token utilities
 ├── controllers/
-│   ├── authController.js    # Authentication logic
-│   ├── userController.js    # User management
-│   └── detectionController.js # Detection operations
+│   ├── analysisJob.controller.js    # Job operations
+│   ├── analysisReport.controller.js # Report operations
+│   └── user.controller.js           # User management
+├── database/
+│   └── db.js                # MongoDB connection
 ├── models/
-│   ├── User.js              # User schema
-│   ├── Analysis.js          # Analysis results schema
-│   └── OTP.js               # OTP schema
+│   ├── analysisJob.model.js     # Job schema
+│   ├── analysisReport.model.js  # Report schema
+│   └── user.model.js            # User schema
 ├── routes/
-│   ├── authRoutes.js        # Auth endpoints
-│   ├── userRoutes.js        # User endpoints
-│   └── detectionRoutes.js   # Detection endpoints
-├── middleware/
-│   ├── auth.js              # JWT verification
-│   ├── upload.js            # File upload handling
-│   ├── errorHandler.js      # Error handling
-│   └── validator.js         # Input validation
-├── utils/
-│   ├── sendEmail.js         # Email utility
-│   ├── generateOTP.js       # OTP generator
-│   └── responseHandler.js   # Response formatting
+│   ├── analysisJob.routes.js    # Job endpoints
+│   ├── analysisReport.routes.js # Report endpoints
+│   └── user.routes.js           # User endpoints
+├── middlewares/
+│   ├── catchAsyncErrors.js  # Async error wrapper
+│   ├── error.middleware.js  # Error handling
+│   ├── isAuth.js            # JWT verification
+│   └── multer.js            # File upload handling
+├── public/                  # Static files
 ├── .env                     # Environment variables
 ├── .env.example             # Environment template
-├── server.js                # Entry point
+├── index.js                 # Entry point
 └── package.json             # Dependencies
 ```
 
@@ -131,7 +128,7 @@ NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
 
 # Database
-MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/deepforgex
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/blackmirror
 
 # Authentication
 JWT_SECRET=your_super_secure_jwt_secret_key_here
@@ -193,53 +190,10 @@ GET    /                   # Get all jobs of logged-in user (Protected)
 
 ## 🔐 Authentication Flow
 
-1. **User Registration** → Email verification via OTP
-2. **OTP Verification** → Account activation
-3. **User Login** → JWT token generation
-4. **Protected Routes** → JWT token validation
-5. **Token Expiry** → Automatic logout & refresh
-
----
-
-## 📊 Database Schema
-
-### User Model
-```javascript
-{
-  name: String,
-  email: String (unique),
-  password: String (hashed),
-  isVerified: Boolean,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-### Analysis Model
-```javascript
-{
-  userId: ObjectId,
-  fileUrl: String,
-  fileType: String,
-  result: {
-    isDeepfake: Boolean,
-    confidence: Number,
-    details: Object
-  },
-  createdAt: Date
-}
-```
-
-### OTP Model
-```javascript
-{
-  email: String,
-  otp: String,
-  expiresAt: Date,
-  createdAt: Date
-}
-```
-
+1. **User Registration** → Registration with Email
+2. **User Login** → JWT token generation
+3. **Protected Routes** → JWT token validation
+4. **Token Expiry** → Automatic logout & refresh
 ---
 
 ## 🛡️ Middleware
@@ -263,29 +217,6 @@ GET    /                   # Get all jobs of logged-in user (Protected)
 - Input sanitization
 - Data validation
 - XSS protection
-
----
-
-
-## 📦 Deployment
-
-
-
-### Production Build
-
-```bash
-# Set environment to production
-NODE_ENV=production
-
-# Start server
-npm start
-```
-
-### Deployment Platforms
-- **Heroku** - Easy deployment with Git
-- **Railway** - Modern platform with auto-deploy
-- **DigitalOcean** - VPS deployment
-- **AWS EC2** - Scalable cloud infrastructure
 
 ---
 
