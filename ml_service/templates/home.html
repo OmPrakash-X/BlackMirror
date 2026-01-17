@@ -1,11 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlackMirror</title>
+<meta charset="UTF-8">
+<title>BlackMirror</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    font-family:Inter,sans-serif;
+    color:#e5e7eb;
+    background:radial-gradient(circle at top, #0f172a, #020617 70%);
+}
+
+/* HEADER */
+.header{
+    padding:18px 36px;
+    font-size:20px;
+    font-weight:800;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+/* LAYOUT */
+.main{
+    display:grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap:30px;
+    padding:28px 36px;
+}
+
+/* UPLOAD */
+.upload-card{
+    background:#020617;
+    border-radius:18px;
+    padding:26px;
+    border:1px solid rgba(255,255,255,.08);
+}
+.drop-zone{
+    border:2px dashed rgba(255,255,255,.25);
+    border-radius:16px;
+    height:200px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+}
+.drop-zone:hover{
+    border-color:#38bdf8;
+    background:rgba(56,189,248,.08);
+}
+
+/* PREVIEW */
+.preview-box{
+    margin-top:18px;
+}
+.preview-box img,
+.preview-box video{
+    width:100%;
+    max-height:220px;
+    border-radius:14px;
+    object-fit:contain;
+    border:1px solid rgba(255,255,255,.08);
+}
+
+/* BUTTONS */
+button{
+    width:100%;
+    padding:12px;
+    margin-top:14px;
+    border-radius:12px;
+    font-weight:700;
+    border:none;
+    cursor:pointer;
+}
+.analyze{background:#2563eb;color:white}
+.reset{
+    background:transparent;
+    border:1px solid rgba(255,255,255,.2);
+    color:#9ca3af;
+}
+
+/* RESULTS */
+.result-panel{
+    background:linear-gradient(180deg,#1f2937,#020617);
+    border-radius:20px;
+    padding:26px;
+    border:1px solid rgba(255,255,255,.1);
+}
+.status{
+    background:rgba(34,197,94,.18);
+    color:#22c55e;
+    padding:8px 14px;
+    border-radius:10px;
+    font-weight:600;
+    margin-bottom:18px;
+    display:inline-block;
+}
+
+/* GAUGE */
+.gauge{
+    position:relative;
+    width:240px;
+    margin:20px auto 26px;
+}
+.gauge svg{transform:rotate(-90deg)}
+.gauge-value{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:40px;
+    font-weight:800;
+}
+
+/* BARS */
+.bar{margin-bottom:14px}
+.bar small{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:6px;
+}
+.progress{
+    height:10px;
+    background:#020617;
+    border-radius:10px;
+    overflow:hidden;
+}
+.real{background:#38bdf8;height:100%}
+.fake{background:#fb7185;height:100%}
+
+/* RESULT MEDIA */
+.result-media{
+    margin-top:16px;
+}
+.result-media img,
+.result-media video{
+    width:100%;
+    max-height:220px;
+    border-radius:14px;
+    object-fit:contain;
+    border:1px solid rgba(255,255,255,.1);
+}
+
+/* RAW */
+.raw-box{
+    background:rgba(255,255,255,.06);
+    padding:16px;
+    border-radius:14px;
+    text-align:center;
+    margin-top:18px;
+}
+.raw-box h2{
+    margin:6px 0;
+    font-size:28px;
+}
+</style>
 </head>
+
 <body>
-    
+
+<div class="header">Veritas AI | Deepfake Detector</div>
+
+<div class="main">
+
+<!-- LEFT -->
+<div class="upload-card">
+<form action="/predict" method="post" enctype="multipart/form-data">
+
+<label class="drop-zone">
+    ☁️ <strong>Select Image or Video</strong>
+    <small>JPG, PNG, MP4</small>
+    <input type="file" name="image" id="fileInput" hidden required>
+</label>
+
+<button class="analyze" type="submit">Analyze</button>
+<button type="button" class="reset" onclick="window.location.href='/'">Reset</button>
+
+<!-- 🔥 PREVIEW UNDER RESET -->
+<div class="preview-box" id="previewBox">
+<p style="opacity:.6">Preview will appear here</p>
+</div>
+
+</form>
+</div>
+
+<!-- RIGHT RESULTS -->
+<div class="result-panel">
+
+{% if result is not none %}
+<div class="status">✔ Analysis Complete</div>
+
+<div class="gauge">
+<svg width="240" height="240">
+<circle cx="120" cy="120" r="100" stroke="#1e293b" stroke-width="18" fill="none"/>
+<circle cx="120" cy="120" r="100"
+ stroke="#38bdf8"
+ stroke-width="18"
+ fill="none"
+ stroke-dasharray="628"
+ stroke-dashoffset="{{ 628 - (result.real_percent/100)*628 }}"
+ stroke-linecap="round"/>
+</svg>
+<div class="gauge-value">{{ result.real_percent }}%</div>
+</div>
+
+<div class="bar">
+<small><span>Real Confidence</span><span>{{ result.real_percent }}%</span></small>
+<div class="progress"><div class="real" style="width:{{ result.real_percent }}%"></div></div>
+</div>
+
+<div class="bar">
+<small><span>Fake Probability</span><span>{{ result.fake_percent }}%</span></small>
+<div class="progress"><div class="fake" style="width:{{ result.fake_percent }}%"></div></div>
+</div>
+
+<!-- 🔥 ANALYSED MEDIA UNDER FAKE PROBABILITY -->
+<div class="result-media">
+{% if result.file.endswith('.mp4') %}
+<video controls>
+    <source src="{{ url_for('static', filename='uploads/' + result.file) }}">
+</video>
+{% else %}
+<img src="{{ url_for('static', filename='uploads/' + result.file) }}">
+{% endif %}
+</div>
+
+<div class="raw-box">
+<small>Raw Problem Score</small>
+<h2>{{ result.raw_prob }}</h2>
+<small>0.0 – 1.0</small>
+</div>
+
+{% else %}
+<p style="opacity:.6">Upload media to view analysis results.</p>
+{% endif %}
+
+</div>
+</div>
+
+<script>
+const input=document.getElementById("fileInput");
+const preview=document.getElementById("previewBox");
+
+input.addEventListener("change",()=>{
+    preview.innerHTML="";
+    const file=input.files[0];
+    if(!file) return;
+    const url=URL.createObjectURL(file);
+
+    if(file.type.startsWith("video")){
+        const v=document.createElement("video");
+        v.src=url; v.controls=true;
+        preview.appendChild(v);
+    }else{
+        const i=document.createElement("img");
+        i.src=url;
+        preview.appendChild(i);
+    }
+});
+</script>
+
 </body>
 </html>

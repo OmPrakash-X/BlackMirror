@@ -54,13 +54,36 @@ ml_service/
 │
 ├── uploads/                # Uploaded media (runtime generated)
 ├── outputs/                # Model artifacts (excluded from version control)
+│   ├── best_model.pth      # Best validation model
+│   ├── final_model.pth     # Final trained model
+│   └── calibrator.joblib   # Calibration model
 │
+├── Dataset/                # Training data (organized structure)
+│   ├── Train/
+│   │   ├── Real/           # Real face images
+│   │   └── Fake/           # Fake/DeepFake images
+│   └── Validation/
+│       ├── Real/
+│       └── Fake/
+│
+├── preproc_data/           # Preprocessed tensors (auto-created)
 ├── requirements.txt        # Python dependencies
 └── README.md               # Project documentation
 ```
 
 > ⚠️ Model weights and generated files are intentionally excluded from version
 control to maintain reproducibility and integrity.
+
+---
+
+## 📊 Dataset
+
+The model is trained on a curated dataset compiled from the following sources:
+
+- **[Kaggle DeepFake Detection Challenge (DFDC)](https://www.kaggle.com/c/deepfake-detection-challenge)**
+- **[FaceForensics++](https://github.com/ondyari/FaceForensics)**
+
+These datasets provide a diverse collection of real and synthetically generated facial images, enabling the model to learn robust detection patterns across multiple deepfake generation techniques including face swapping, face reenactment, and fully synthesized faces.
 
 ---
 
@@ -198,3 +221,4 @@ Example response:
 * timm model library
 * Albumentations
 * Flask framework
+* Kaggle DFDC & FaceForensics++ datasets
