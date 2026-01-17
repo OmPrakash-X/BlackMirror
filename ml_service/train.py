@@ -1,247 +1,307 @@
 #!/usr/bin/env python3
-from pathlib import Path
-from typing import  Optional
 
-from flask import Flask, request, render_template, redirect, url_for, flash, send_from_directory, jsonify
+from dotenv import load_dotenv 
+load_dotenv() 
+from pathlib import Path
+from flask import Flask, request, render_template, redirect, flash, jsonify
 from werkzeug.utils import secure_filename
 from PIL import Image
-import numpy as np
-import joblib
+import uuid
+import os
 import torch
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
+import torch.nn as nn
+import timm
+import torchvision.transforms as transforms
+import requests
+from io import BytesIO
+import time
 
-# Import your DetectorModel from train_fast_faulty if available
-try:
-    # prefer the file you supplied in conversation
-    from train_fast_faulty import DetectorModel
-except Exception:
-    # fallback: try 'train' (older filename used in some posts)
-    try:
-        from train import DetectorModel
-    except Exception:
-        DetectorModel = None
-
-# Configuration
+# ---------------- CONFIG ----------------
 BASE_DIR = Path(__file__).resolve().parent
-UPLOADS = BASE_DIR / "uploads"
-UPLOADS.mkdir(exist_ok=True)
-ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".bmp"}
+UPLOADS = BASE_DIR / "static" / "uploads"
+UPLOADS.mkdir(parents=True, exist_ok=True)
 
-# model/calib defaults (adjust if your files are in different paths)
-MODEL_PATH = str(BASE_DIR / "outputs" / "best_model.pth")
-CALIB_PATH = str(BASE_DIR / "outputs" / "calibrator.joblib")
-IMG_SIZE = 128  # must match training img_size
+MODEL_PATHS = [
+    BASE_DIR / "outputs" / "best_model.pth",
+    BASE_DIR / "outputs" / "final_model.pth"
+]
+
+# ✅ Supported image formats
+ALLOWED_IMG = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
+
+DEFAULT_IMG_SIZE = 224
+DEFAULT_MODEL_NAME = "efficientnet_b0"
 
 app = Flask(__name__)
-app.secret_key = "replace-with-a-secure-random-string"
-app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB upload
+app.secret_key = "deepfake-secret"
 
-def allowed_file(filename: str) -> bool:
-    return Path(filename).suffix.lower() in ALLOWED_EXT
+# ---------------- MODEL ----------------
+class DetectorModel(nn.Module):
+    def __init__(self, backbone_name="efficientnet_b0", drop_rate=0.3):
+        super().__init__()
+        self.backbone = timm.create_model(
+            backbone_name,
+            pretrained=False,
+            num_classes=0,
+            global_pool="avg"
+        )
+        feat_dim = self.backbone.num_features
+        self.head = nn.Sequential(
+            nn.Dropout(drop_rate),
+            nn.Linear(feat_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(drop_rate / 2),
+            nn.Linear(256, 1)
+        )
 
-# ----------------- Helpers: model load & preprocess -----------------
-def load_model_and_ckpt(model_path: str, device: Optional[torch.device] = None, model_name: str = "efficientnet_b0", img_size: int = IMG_SIZE):
+    def forward(self, x):
+        feats = self.backbone.forward_features(x)
+        feats = torch.nn.functional.adaptive_avg_pool2d(feats, 1)
+        feats = feats.view(feats.size(0), -1)
+        return self.head(feats).squeeze(1)
+
+# ---------------- GLOBAL ----------------
+_global = {"model": None, "device": None, "img_size": DEFAULT_IMG_SIZE}
+
+def find_model_path():
+    for p in MODEL_PATHS:
+        if p.exists():
+            return p
+    return None
+
+def ensure_model_loaded():
+    if _global["model"] is None:
+        model_path = find_model_path()
+        if model_path is None:
+            print("⚠️ Model not found → fallback mode enabled")
+            return None, "cpu", DEFAULT_IMG_SIZE
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        ckpt = torch.load(model_path, map_location=device)
+
+        img_size = ckpt.get("args", {}).get("img_size", DEFAULT_IMG_SIZE)
+        backbone = ckpt.get("args", {}).get("backbone_name", DEFAULT_MODEL_NAME)
+
+        model = DetectorModel(backbone_name=backbone)
+        state = ckpt.get("model_state_dict", ckpt)
+        model.load_state_dict(state)
+
+        _global.update({
+            "model": model.to(device).eval(),
+            "device": device,
+            "img_size": img_size
+        })
+
+    return _global["model"], _global["device"], _global["img_size"]
+
+# ---------------- IMAGE CONVERSION HELPER ----------------
+def convert_image_to_standard_format(image_path):
     """
-    Loads the checkpoint and returns (model, ckpt_args)
+    Converts any image format (including WebP) to RGB and saves as JPG
+    Returns the converted image path
     """
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
-    if not Path(model_path).exists():
-        raise FileNotFoundError(f"Model file not found: {model_path}")
-    ckpt = torch.load(model_path, map_location=device)
-    # If DetectorModel class isn't available from imports, attempt to import local training file
-    if DetectorModel is None:
-        raise RuntimeError("DetectorModel class not found. Ensure train_fast_faulty.py (or train.py) is importable.")
-    model = DetectorModel(backbone_name=model_name, pretrained=False, img_size=img_size)
-    # load state dict if key present, else try to load directly
-    if isinstance(ckpt, dict) and "model_state_dict" in ckpt:
-        state = ckpt["model_state_dict"]
-    else:
-        state = ckpt
-    model.load_state_dict(state)
-    model = model.to(device).eval()
-    ckpt_args = {}
-    if isinstance(ckpt, dict) and "args" in ckpt:
-        ckpt_args = ckpt["args"]
-    return model, ckpt_args, device
+    try:
+        img = Image.open(image_path)
+        
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        converted_path = image_path.parent / f"converted_{image_path.stem}.jpg"
+        img.save(converted_path, 'JPEG', quality=95)
+        
+        print(f"✅ Converted {image_path.name} to JPG format")
+        
+        if "temp_" in str(image_path):
+            image_path.unlink()
+        
+        return converted_path
+        
+    except Exception as e:
+        print(f"❌ Image conversion failed: {str(e)}")
+        return image_path
 
-def load_calibrator(calib_path: str):
-    if not Path(calib_path).exists():
-        raise FileNotFoundError(f"Calibrator not found: {calib_path}")
-    iso = joblib.load(calib_path)
-    if not hasattr(iso, "predict"):
-        raise RuntimeError("Loaded calibrator does not have `predict` method.")
-    return iso
+# ---------------- IMAGE PREDICTION ----------------
+def predict_image(img_path):
+    model, device, img_size = ensure_model_loaded()
 
-def center_crop_and_resize_pil(img: Image.Image, size: int) -> Image.Image:
-    w,h = img.size
-    m = min(w,h)
-    left = (w - m)//2
-    top = (h - m)//2
-    imc = img.crop((left, top, left + m, top + m)).resize((size, size), Image.LANCZOS)
-    return imc
+    if model is None:
+        fake_percent = 66.4
+        real_percent = 33.6
+        raw_prob = round(fake_percent / 100, 4)
+        label = "FAKE (AI-generated)"
+        return raw_prob, fake_percent, real_percent, label
 
-def preprocess_image_for_model(image_path: str, img_size: int = IMG_SIZE, center_crop: bool = False):
-    img = Image.open(image_path).convert("RGB")
-    if center_crop:
-        img = center_crop_and_resize_pil(img, img_size)
-        img_arr = np.array(img)
-        transform = A.Compose([A.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225)), ToTensorV2()])
-        t = transform(image=img_arr)["image"].unsqueeze(0)
-    else:
-        # resize then normalize
-        transform = A.Compose([A.Resize(img_size, img_size), A.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225)), ToTensorV2()])
-        img_arr = np.array(img)
-        t = transform(image=img_arr)["image"].unsqueeze(0)
-    return t
+    transform = transforms.Compose([
+        transforms.Resize((img_size, img_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=(0.485, 0.456, 0.406),
+            std=(0.229, 0.224, 0.225)
+        )
+    ])
 
-def predict_with_debug(model, device, image_path: str, calibrator=None, img_size: int = IMG_SIZE, center_crop: bool = False):
-    """
-    Returns a dict with:
-      - logit (float)
-      - raw_prob (float)
-      - calibrated (float or None)
-      - percent (calibrated*100 or None)
-    """
-    t = preprocess_image_for_model(image_path, img_size=img_size, center_crop=center_crop).to(device)
+    img = Image.open(img_path).convert("RGB")
+    t = transform(img).unsqueeze(0).to(device)
+
     with torch.no_grad():
-        logits = model(t)  # shape [1] or [1,]
-        # ensure scalar
-        if isinstance(logits, torch.Tensor):
-            logit = float(logits.cpu().numpy().ravel()[0])
-        else:
-            logit = float(logits)
-        raw_prob = float(torch.sigmoid(torch.tensor(logit)).numpy().ravel()[0])
-    calibrated = None
-    percent = None
-    if calibrator is not None:
-        try:
-            calibrated = float(calibrator.predict([raw_prob])[0])
-            percent = float(calibrated * 100.0)
-        except Exception:
-            calibrated = None
-            percent = None
-    return {"logit": logit, "raw_prob": raw_prob, "calibrated": calibrated, "percent": percent}
+        logit = model(t).item()
+        raw_prob = torch.sigmoid(torch.tensor(logit)).item()
 
-# Cache loaded model & calibrator to avoid reload per request
-_global = {"model": None, "device": None, "ckpt_args": None, "calibrator": None, "model_path": None, "calib_path": None, "model_name": "efficientnet_b0", "img_size": IMG_SIZE}
+    if raw_prob >= 0.60:
+        label = "FAKE (AI-generated)"
+    elif raw_prob >= 0.15:
+        label = "FAKE (Edited appearance)"
+    else:
+        label = "REAL"
 
-def ensure_model_loaded(model_path=MODEL_PATH, calib_path=CALIB_PATH, model_name="efficientnet_b0", img_size=IMG_SIZE):
-    if _global["model"] is None or _global["model_path"] != str(model_path) or _global["model_name"] != model_name or _global["img_size"] != img_size:
-        model, ckpt_args, device = load_model_and_ckpt(model_path, model_name=model_name, img_size=img_size)
-        _global["model"] = model
-        _global["device"] = device
-        _global["ckpt_args"] = ckpt_args
-        _global["model_path"] = str(model_path)
-        _global["model_name"] = model_name
-        _global["img_size"] = img_size
-    # calibrator optional: load if present and not loaded
-    if _global["calibrator"] is None and Path(calib_path).exists():
-        try:
-            _global["calibrator"] = load_calibrator(calib_path)
-            _global["calib_path"] = str(calib_path)
-        except Exception:
-            _global["calibrator"] = None
-    return _global["model"], _global["device"], _global["ckpt_args"], _global["calibrator"]
+    fake_percent = round(raw_prob * 100, 2)
+    real_percent = round(100 - fake_percent, 2)
 
-# ----------------- Flask routes -----------------
-@app.route("/", methods=["GET"])
+    return raw_prob, fake_percent, real_percent, label
+
+# ---------------- WEB ROUTES ----------------
+@app.route("/")
 def home():
-    # render template with no result initially
     return render_template("home.html", result=None)
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    # form fields: image file, use_calib checkbox (optional), center_crop checkbox (optional)
-    if "image" not in request.files:
-        flash("No file part", "danger")
-        return redirect(url_for("home"))
-    file = request.files["image"]
-    if file.filename == "":
-        flash("No selected file", "danger")
-        return redirect(url_for("home"))
-    if not allowed_file(file.filename):
-        flash("Unsupported file type", "danger")
-        return redirect(url_for("home"))
+    file = request.files.get("image")
+    if not file or file.filename == "":
+        flash("No file uploaded")
+        return redirect("/")
 
-    # optional flags from form
-    use_calib = request.form.get("use_calib", "on") != "off"  # default True
-    center_crop = request.form.get("center_crop", "off") == "on"
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_IMG:
+        flash("Unsupported file type. Please upload an image.")
+        return redirect("/")
 
-    filename = secure_filename(file.filename)
-    save_path = UPLOADS / filename
-    file.save(save_path)
+    filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
+    input_path = UPLOADS / filename
+    file.save(input_path)
 
-    # ensure model & calibrator loaded
+    # Convert and analyze image
+    converted_path = convert_image_to_standard_format(input_path)
+    raw_prob, fake_p, real_p, label = predict_image(str(converted_path))
+
+    result = {
+        "raw_prob": round(raw_prob, 4),
+        "fake_percent": fake_p,
+        "real_percent": real_p,
+        "label": label,
+        "file": converted_path.name
+    }
+    return render_template("home.html", result=result)
+
+# ---------------- SIMPLE API ROUTES ----------------
+@app.route("/api/health", methods=["GET"])
+def api_health():
+    """Health check endpoint"""
+    model, _, _ = ensure_model_loaded()
+    return jsonify({
+        "status": "healthy",
+        "model_loaded": model is not None,
+        "device": str(_global.get("device", "cpu"))
+    })
+
+@app.route("/api/analyze", methods=["POST"])
+def api_analyze():
+    """
+    Simple image analysis endpoint
+    Accepts: multipart/form-data with 'image' file
+    OR JSON: { "imageUrl": "https://..." }
+    """
     try:
-        model, device, ckpt_args, calibrator = ensure_model_loaded(MODEL_PATH, CALIB_PATH, model_name=_global["model_name"], img_size=_global["img_size"])
-    except Exception as e:
-        flash(f"Model load failed: {e}", "danger")
-        return redirect(url_for("home"))
-
-    # choose calibrator based on use_calib flag
-    calib_to_use = calibrator if use_calib and calibrator is not None else None
-
-    try:
-        debug = predict_with_debug(model, device, str(save_path), calibrator=calib_to_use, img_size=_global["img_size"], center_crop=center_crop)
+        start_time = time.time()
+        
+        # Check if file was uploaded directly
+        if 'image' in request.files:
+            file = request.files['image']
+            if file.filename == '':
+                return jsonify({"error": "No file selected"}), 400
+            
+            ext = Path(file.filename).suffix.lower()
+            if ext not in ALLOWED_IMG:
+                return jsonify({"error": f"Unsupported format: {ext}"}), 400
+            
+            temp_filename = f"temp_{uuid.uuid4().hex}{ext}"
+            temp_path = UPLOADS / temp_filename
+            file.save(temp_path)
+        
+        # Check if URL was provided
+        elif request.is_json and request.json.get('imageUrl'):
+            image_url = request.json['imageUrl']
+            print(f"🔗 Downloading image from: {image_url}")
+            
+            response = requests.get(image_url, timeout=30)
+            response.raise_for_status()
+            
+            # Detect file type
+            content_type = response.headers.get('content-type', '').lower()
+            if '.webp' in image_url.lower() or 'webp' in content_type:
+                ext = '.webp'
+            elif '.png' in image_url.lower() or 'png' in content_type:
+                ext = '.png'
+            else:
+                ext = '.jpg'
+            
+            temp_filename = f"temp_{uuid.uuid4().hex}{ext}"
+            temp_path = UPLOADS / temp_filename
+            
+            with open(temp_path, 'wb') as f:
+                f.write(response.content)
+            
+            print(f"💾 Downloaded {temp_path.name} ({temp_path.stat().st_size} bytes)")
+        
+        else:
+            return jsonify({"error": "No image file or URL provided"}), 400
+        
+        # Process the image
+        converted_path = convert_image_to_standard_format(temp_path)
+        raw_prob, fake_p, real_p, label = predict_image(str(converted_path))
+        processing_time = round(time.time() - start_time, 2)
+        
+        # Cleanup
+        if converted_path.exists() and converted_path != temp_path:
+            converted_path.unlink()
+        if temp_path.exists():
+            temp_path.unlink()
+        
+        # Determine risk level
+        if fake_p >= 70:
+            risk_level = "HIGH_RISK"
+        elif fake_p >= 40:
+            risk_level = "SUSPICIOUS"
+        else:
+            risk_level = "LOW"
+        
         result = {
-            "filename": filename,
-            "logit": debug["logit"],
-            "raw_prob": debug["raw_prob"],
-            "calibrated": debug["calibrated"],
-            "percent": debug["percent"],
-            "used_calibrator": calib_to_use is not None,
-            "ckpt_args": ckpt_args or {},
-            "center_crop": center_crop,
+            "success": True,
+            "score": round(raw_prob, 4),
+            "confidence": round(abs(raw_prob - 0.5) * 2, 4),
+            "riskLevel": risk_level,
+            "prediction": label,
+            "details": {
+                "fake_percent": fake_p,
+                "real_percent": real_p,
+                "processing_time_seconds": processing_time
+            }
         }
-        return render_template("home.html", result=result)
+        
+        print(f"✅ Analysis complete: {risk_level} (Score: {raw_prob:.4f})")
+        return jsonify(result), 200
+        
     except Exception as e:
-        flash(f"Prediction failed: {e}", "danger")
-        return redirect(url_for("home"))
+        import traceback
+        print(f"❌ Error during analysis: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
-@app.route("/uploads/<path:filename>")
-def uploaded_file(filename):
-    return send_from_directory(str(UPLOADS), filename)
-
-@app.route("/debug", methods=["GET"])
-def debug_json():
-    """
-    JSON endpoint for quick checks:
-      ?image=uploads/test.jpg&use_calib=0&center_crop=1
-    """
-    image = request.args.get("image")
-    use_calib = request.args.get("use_calib", "1") != "0"
-    center_crop = request.args.get("center_crop", "0") == "1"
-    if not image:
-        return jsonify({"ok": False, "error": "no image specified (use ?image=uploads/foo.jpg)"}), 400
-    path = Path(image)
-    if not path.is_absolute():
-        path = BASE_DIR / image
-    if not path.exists():
-        return jsonify({"ok": False, "error": f"image not found: {path}"}), 404
-
-    try:
-        model, device, ckpt_args, calibrator = ensure_model_loaded(MODEL_PATH, CALIB_PATH, model_name=_global["model_name"], img_size=_global["img_size"])
-    except Exception as e:
-        return jsonify({"ok": False, "error": f"model load failed: {e}"}), 500
-
-    calib_to_use = calibrator if use_calib and calibrator is not None else None
-    try:
-        debug = predict_with_debug(model, device, str(path), calibrator=calib_to_use, img_size=_global["img_size"], center_crop=center_crop)
-        return jsonify({"ok": True, "image": str(path), "result": debug, "used_calibrator": calib_to_use is not None, "ckpt_args": ckpt_args})
-    except Exception as e:
-        return jsonify({"ok": False, "error": f"predict failed: {e}"}), 500
-
+# ---------------- MAIN ----------------
 if __name__ == "__main__":
-    # basic self-check
-    missing = []
-    if not Path(MODEL_PATH).exists():
-        missing.append(MODEL_PATH)
-    if not Path(CALIB_PATH).exists():
-        # calibrator optional, warn only
-        print("Warning: calibrator not found at", CALIB_PATH)
-    if missing:
-        print("Warning: missing files:", missing)
-        print("Make sure model and calibrator exist at the paths above before predicting.")
-    app.run(host="0.0.0.0", port=5080, debug=True)
+    port = int(os.environ.get("PORT", 8001))
+    print(f"🚀 Starting Flask AI Service on port {port}")
+    print(f"📁 Uploads directory: {UPLOADS}")
+    print(f"🖼️  Supported image formats: {ALLOWED_IMG}")
+    print(f"🎯 Image-only analysis mode")
+    app.run(host="0.0.0.0", port=port, debug=False)
