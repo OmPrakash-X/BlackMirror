@@ -163,12 +163,6 @@ VITE_API_URL=http://localhost:5000
 - Password strength indicator
 - Terms acceptance
 
-#### OTPVerification
-- 6-digit OTP input
-- Resend OTP functionality
-- Auto-focus navigation
-- Timer countdown
-
 ### Detection Components
 
 #### FileUpload
