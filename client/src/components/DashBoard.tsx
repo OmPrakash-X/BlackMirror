@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Upload, AlertTriangle, Eye, Zap, ArrowRight, FileImage, FileVideo, Clock, BarChart3 } from "lucide-react";
+import { Upload, Eye, Zap, ArrowRight, FileImage, FileVideo, BarChart3 } from "lucide-react";
 
 const DashBoard = () => {
   const navigate = useNavigate();
