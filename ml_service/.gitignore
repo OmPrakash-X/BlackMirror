@@ -1,0 +1,37 @@
+# Environment variables (IMPORTANT!)
+.env
+.env.local
+venv
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+
+
+# Model files (optional - if they're large)
+# outputs/*.pth
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+
+
+__pycache__/
+*.pyc
+
