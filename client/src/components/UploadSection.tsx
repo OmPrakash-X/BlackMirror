@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { Upload, FileVideo, FileImage, Loader2, Shield, AlertTriangle } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "./ui/button";
-import { useAppDispatch } from "../hooks/redux";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -15,7 +14,6 @@ interface UploadSectionProps {
 const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const dispatch = useAppDispatch();
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
