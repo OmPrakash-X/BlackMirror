@@ -322,7 +322,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
         </div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-            Media Deepfake Detection Results
+            Media Deepfake{"\n"} 
+             <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">Detection</span> Results
           </h2>
           <span className="text-xs sm:text-sm text-gray-400 font-mono">
             Generated at {nowLabel} UTC
