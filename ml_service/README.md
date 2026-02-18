@@ -11,7 +11,7 @@
 
 ---
 
-## 📖 Overview
+## 📖 Overviewot
 
 DeepFake Detector is a production-ready deep learning system that identifies AI-generated and manipulated faces in images with exceptional accuracy. Built on PyTorch and deployed with Flask, the system achieves **99.8% AUC** and **98.1% accuracy** on validation data, making it suitable for real-world applications in media verification and content moderation.
 

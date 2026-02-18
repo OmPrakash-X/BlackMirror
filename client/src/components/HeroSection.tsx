@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Upload, Shield, LogIn, LogOut } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -50,6 +51,44 @@ const HeroSection = ({ onGetStarted, onLogin }: HeroSectionProps) => {
 
   return (
     <section className="min-h-screen relative flex items-center justify-center px-4 sm:px-6 md:px-12 overflow-hidden">
+      {/* ── TOP NAVBAR ── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
+        style={{
+          background: "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(16px)",
+          borderBottom: "1px solid rgba(0,255,0,0.12)",
+        }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-green-400" />
+          <span className="font-black text-white tracking-widest text-base font-mono">BLACKMIRROR</span>
+        </div>
+
+        {/* Nav links */}
+        <div className="flex items-center gap-6">
+          <Link
+            to="/how-it-works"
+            className="flex items-center gap-2 text-sm font-mono tracking-wider uppercase transition-all duration-200"
+            style={{ color: "rgba(0,245,255,0.85)" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#00f5ff"; (e.currentTarget as HTMLAnchorElement).style.textShadow = "0 0 12px #00f5ff"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(0,245,255,0.85)"; (e.currentTarget as HTMLAnchorElement).style.textShadow = "none"; }}
+          >
+            <span style={{
+              display: "inline-block",
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#00f5ff",
+              boxShadow: "0 0 6px #00f5ff",
+              marginRight: 4,
+            }} />
+            How It Works
+          </Link>
+
+
+        </div>
+      </nav>
       {/* Animated Background Grid */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,0,0.1)_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse sm:bg-[size:25px_25px]"></div>
@@ -80,7 +119,7 @@ const HeroSection = ({ onGetStarted, onLogin }: HeroSectionProps) => {
               VERIFY
               {" "}
               <span className="bg-gradient-to-r from-green-400 to-orange-400 bg-clip-text text-transparent">
-                 TRUTH
+                TRUTH
               </span>
               <br />
               IN REAL{" "}

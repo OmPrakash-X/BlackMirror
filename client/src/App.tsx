@@ -10,6 +10,7 @@ import Login from "./components/Login";
 import useGetUser from "./hooks/useGetUser";
 import AnalysisPage from "./pages/AnalysisPage";
 import DashBoard from "./components/DashBoard";
+import HowItWorksPage from "./pages/HowItWorksPage";
 
 type ModalType = "none" | "register" | "login";
 
@@ -145,6 +146,7 @@ export default function App() {
         />
         <Route path="/dashboard" element={<DashBoard />} />
         <Route path="/analyze" element={<AnalysisPage />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
       </Routes>
 
       {/* Modals */}

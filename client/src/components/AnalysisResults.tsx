@@ -14,7 +14,6 @@ import axios from "axios";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { ImageWithFallback } from "./ImageWithFallback";
-import AudioPlayer from "./AudioPlayer";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -77,12 +76,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
   // Generate random dummy metadata once on mount
   const dummyMetadata = useMemo(() => {
     const isVideo = jobData.mediaType === "video";
-
+    
     // Random size: images 100KB-1MB, videos 2MB-10MB
     const minBytes = isVideo ? 2 * 1024 * 1024 : 100 * 1024;
     const maxBytes = isVideo ? 10 * 1024 * 1024 : 1 * 1024 * 1024;
     const sizeBytes = Math.floor(Math.random() * (maxBytes - minBytes) + minBytes);
-
+    
     // Format bytes to human readable
     const formatBytes = (bytes: number): string => {
       const sizes = ["B", "KB", "MB", "GB"];
@@ -161,18 +160,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
     }
   };
 
-  const getDummyFindings = (score: number | undefined, mediaType: string) => {
-    const isAudio = mediaType === "audio";
-
+  const getDummyFindings = (score: number | undefined) => {
     if (score === undefined) {
-      if (isAudio) {
-        return [
-          "Limited vocal samples available; model requires more audio data",
-          "No strong synthetic audio patterns detected yet",
-          "Standard acoustic encoding patterns observed",
-          "Voice cadence appears normal at this stage",
-        ];
-      }
       return [
         "Limited evidence available; model requires more data",
         "No strong manipulation patterns detected yet",
@@ -182,14 +171,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
     }
 
     if (score >= 0.8) {
-      if (isAudio) {
-        return [
-          "Anomalous spectral signatures detected in voice harmonics",
-          "Inconsistent vocal resonance and breathing patterns",
-          "Artificial silence and encoding artifacts between phonemes",
-          "Lack of biological micro-variations in speech cadence",
-        ];
-      }
       return [
         "Strong visual artifacts detected in multiple regions",
         "Inconsistent facial geometry and lighting conditions",
@@ -199,14 +180,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
     }
 
     if (score >= 0.4) {
-      if (isAudio) {
-        return [
-          "Minor jitter in vocal pitch stability detected",
-          "Subtle electronic noise floor variations observed",
-          "Partial deviation from standard human frequency response",
-          "Localized anomalies in harmonic distribution",
-        ];
-      }
       return [
         "Mild inconsistencies in edge sharpness across frames",
         "Localized lighting variations in facial regions",
@@ -215,14 +188,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
       ];
     }
 
-    if (isAudio) {
-      return [
-        "No significant synthetic audio artifacts detected",
-        "Natural vocal harmonics and resonance patterns observed",
-        "Consistent noise floor and biological speech dynamics",
-        "Standard frequency response matching human speech",
-      ];
-    }
     return [
       "No significant deepfake artifacts detected",
       "Lighting and textures largely consistent across frames",
@@ -244,38 +209,34 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
     return "RESULT: CONTENT LIKELY AUTHENTIC";
   };
 
-  const getCheckItems = (score: number | undefined, mediaType: string) => {
-    const isAudio = mediaType === "audio";
-    const label1 = isAudio ? "Spectral Consistency" : "Frame Consistency";
-    const label2 = isAudio ? "Vocal Fingerprint" : "Pixel Patterns";
-
+  const getCheckItems = (score: number | undefined) => {
     if (score === undefined) {
       return [
-        { check: label1, status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
-        { check: label2, status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
+        { check: "Frame Consistency", status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
+        { check: "Pixel Patterns", status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
         { check: "Metadata Check", status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
       ];
     }
 
     if (score >= 0.8) {
       return [
-        { check: label1, status: "ISSUE", icon: XCircle, color: "text-red-400" },
-        { check: label2, status: "ISSUE", icon: XCircle, color: "text-red-400" },
+        { check: "Frame Consistency", status: "ISSUE", icon: XCircle, color: "text-red-400" },
+        { check: "Pixel Patterns", status: "ISSUE", icon: XCircle, color: "text-red-400" },
         { check: "Metadata Check", status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
       ];
     }
 
     if (score >= 0.4) {
       return [
-        { check: label1, status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
-        { check: label2, status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
+        { check: "Frame Consistency", status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
+        { check: "Pixel Patterns", status: "REVIEW", icon: AlertCircle, color: "text-yellow-400" },
         { check: "Metadata Check", status: "OK", icon: CheckCircleSolid, color: "text-green-400" },
       ];
     }
 
     return [
-      { check: label1, status: "OK", icon: CheckCircleSolid, color: "text-green-400" },
-      { check: label2, status: "OK", icon: CheckCircleSolid, color: "text-green-400" },
+      { check: "Frame Consistency", status: "OK", icon: CheckCircleSolid, color: "text-green-400" },
+      { check: "Pixel Patterns", status: "OK", icon: CheckCircleSolid, color: "text-green-400" },
       { check: "Metadata Check", status: "OK", icon: CheckCircleSolid, color: "text-green-400" },
     ];
   };
@@ -342,8 +303,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
   const score = jobStatus.results?.score;
   const confidence = jobStatus.results?.confidence;
   const riskLevel = jobStatus.results?.riskLevel;
-  const findings = getDummyFindings(score, jobStatus.mediaType);
-  const checkItems = getCheckItems(score, jobStatus.mediaType);
+  const findings = getDummyFindings(score);
+  const checkItems = getCheckItems(score);
   const footerSummary = getSummaryFooter(score);
 
   const deepfakePercent = score !== undefined ? score * 100 : 0;
@@ -361,8 +322,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
         </div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-            Media Deepfake{"\n"}
-            <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">Detection</span> Results
+            Media Deepfake{"\n"} 
+             <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">Detection</span> Results
           </h2>
           <span className="text-xs sm:text-sm text-gray-400 font-mono">
             Generated at {nowLabel} UTC
@@ -420,8 +381,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
                   jobStatus.status === "completed"
                     ? "text-emerald-400"
                     : jobStatus.status === "failed"
-                      ? "text-red-400"
-                      : "text-yellow-400"
+                    ? "text-red-400"
+                    : "text-yellow-400"
                 }
               >
                 {jobStatus.status.toUpperCase()}
@@ -447,8 +408,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
                     alt="Analyzed media"
                     className="w-full h-56 object-contain rounded-lg border border-gray-700/50 bg-black/60"
                   />
-                ) : jobData.mediaType === "audio" ? (
-                  <AudioPlayer src={jobData.fileUrl} />
                 ) : (
                   <div className="w-full h-56 rounded-lg border border-gray-700/50 overflow-hidden bg-black/60 flex items-center justify-center">
                     <video
@@ -475,7 +434,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
                   SIZE:{" "}
                   {jobStatus.results?.metadata?.size || dummyMetadata.size}
                   {jobData.mediaType === "video" &&
-                    ` | DURATION: ${jobStatus.results?.metadata?.duration || dummyMetadata.duration
+                    ` | DURATION: ${
+                      jobStatus.results?.metadata?.duration || dummyMetadata.duration
                     }`}
                 </div>
                 <div className="truncate">
@@ -531,16 +491,18 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ jobData, onReset }) =
                       strokeWidth="8"
                       fill="transparent"
                       strokeDasharray={circleDash}
-                      className={`${getRiskColor(riskLevel)} ${jobStatus.status === "completed" ? "animate-none" : "animate-pulse"
-                        }`}
+                      className={`${getRiskColor(riskLevel)} ${
+                        jobStatus.status === "completed" ? "animate-none" : "animate-pulse"
+                      }`}
                       strokeLinecap="round"
                     />
                   </svg>
 
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div
-                      className={`text-3xl sm:text-4xl font-black ${getRiskColor(riskLevel) || "text-red-400"
-                        } mb-1`}
+                      className={`text-3xl sm:text-4xl font-black ${
+                        getRiskColor(riskLevel) || "text-red-400"
+                      } mb-1`}
                     >
                       {deepfakePercent.toFixed(1)}%
                     </div>

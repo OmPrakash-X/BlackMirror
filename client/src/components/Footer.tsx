@@ -23,7 +23,7 @@ const Footer = () => {
             </div>
 
             <div className="text-sm text-gray-500 space-y-1">
-              <div>Built at HACK FOR TOMORROW 2.0</div>
+              <div>Built at HACKFEST 2.0</div>
               <div className="text-xs">
                 AI-powered solution for detecting manipulated media
               </div>
@@ -91,7 +91,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
             <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-center sm:text-left">
               <div className="whitespace-nowrap">
-                © 2025 BlackMirror. All rights reserved.
+                © 2026 BlackMirror. All rights reserved.
               </div>
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0"></div>

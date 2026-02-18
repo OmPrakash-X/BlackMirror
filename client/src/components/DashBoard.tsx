@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Upload, Eye, Zap, ArrowRight, FileImage, FileVideo, BarChart3, Music } from "lucide-react";
+import { Upload, Eye, Zap, ArrowRight, FileImage, FileVideo, BarChart3 } from "lucide-react";
 
 const DashBoard = () => {
   const navigate = useNavigate();
@@ -92,7 +92,7 @@ const DashBoard = () => {
               Upload & Analyze Media
             </h2>
             <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
-              Upload your images, videos, or audio files to get instant deepfake detection results with detailed forensic analysis and threat assessment reports
+              Upload your images or videos to get instant deepfake detection results with detailed forensic analysis and threat assessment reports
             </p>
 
 
@@ -108,7 +108,7 @@ const DashBoard = () => {
               </div>
               <div className="flex items-center gap-2 text-gray-300">
                 <Music className="w-5 h-5 text-yellow-400" />
-                <span className="text-sm">Audios</span>
+                <span className="text-sm">Audio</span>
               </div>
             </div>
 
@@ -123,7 +123,7 @@ const DashBoard = () => {
 
             {/* Supported formats */}
             <div className="text-sm text-gray-500 space-y-1">
-              <div>Supported formats: JPG, PNG, MP4, MOV, WAV, MP3 • Max file size: 50MB</div>
+              <div>Supported formats: JPG, PNG, MP4, MOV • Max file size: 50MB</div>
               <div>Drag & drop enabled • Multiple file upload • Instant results</div>
             </div>
           </div>

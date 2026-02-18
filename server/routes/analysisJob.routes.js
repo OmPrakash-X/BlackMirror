@@ -2,7 +2,6 @@ import express from "express";
 import { upload } from "../middlewares/multer.js"; 
 import {
   uploadAndCreateJob,
-  uploadAndCreateAudioJob,
   updateJobResult,
   updateJobError,
   getJobById,
@@ -13,11 +12,8 @@ import { isAuth } from "../middlewares/isAuth.js";
 
 const router = express.Router();
 
-// ✅ Upload & create a new image/video job
+// ✅ Upload & create a new job
 router.post("/upload", isAuth, upload.single("file"), uploadAndCreateJob);
-
-// ✅ Upload & create a new audio job
-router.post("/upload-audio", isAuth, upload.single("file"), uploadAndCreateAudioJob);
 
 // ✅ Update job results after AI processing (called by AI service)
 router.patch("/:jobId/result", updateJobResult); // ✅ Changed to PATCH
