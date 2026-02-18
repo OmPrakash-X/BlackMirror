@@ -139,16 +139,8 @@ CLOUD_NAME=your_cloudinary_cloud_name
 CLOUD_API_KEY=your_cloudinary_api_key
 CLOUD_SECRET=your_cloudinary_secret
 
-# Email Service (Gmail SMTP)
-SMTP_PORT=465
-SMTP_HOST=smtp.gmail.com
-SMTP_SERVICE=gmail
-SMTP_MAIL=your_email@gmail.com
-SMTP_PASS=your_gmail_app_password
-
 # AI Service
 AI_SERVICE_URL=http://localhost:8001
-
 ```
 
 ---
@@ -158,22 +150,12 @@ AI_SERVICE_URL=http://localhost:8001
 ### User Routes (`/api/user`)
 
 ```
-POST   /request-otp        # Request OTP for login/verification
-POST   /verify-otp         # Verify OTP code
+POST   /register           # User registration
 POST   /login              # User login
 GET    /me                 # Get logged-in user profile (Protected)
 GET    /logout             # User logout (Protected)
 ```
 
-### Report Routes (`/api/reports`) 
-
-```
-POST   /request-otp        # Request OTP for login/verification
-POST   /verify-otp         # Verify OTP code
-POST   /login              # User login
-GET    /me                 # Get logged-in user profile (Protected)
-GET    /logout             # User logout (Protected)
-```
 
 ### Job Routes (`/api/jobs`)
 
