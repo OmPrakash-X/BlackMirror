@@ -108,7 +108,7 @@ const DashBoard = () => {
               </div>
               <div className="flex items-center gap-2 text-gray-300">
                 <Music className="w-5 h-5 text-yellow-400" />
-                <span className="text-sm">Audio</span>
+                <span className="text-sm">Audios</span>
               </div>
             </div>
 
