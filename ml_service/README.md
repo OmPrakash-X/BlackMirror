@@ -1,4 +1,4 @@
-# 🧠 DeepFake Detector
+# 🧠 DeepFake Detector - ML Model
 
 **A high-performance AI system for detecting synthetic and manipulated faces in images**
 
@@ -59,10 +59,6 @@ The platform combines state-of-the-art computer vision models with a user-friend
 ### Setup Instructions
 
 ```bash
-# Clone the repository
-git clone https://github.com/MoteeshA/DeepFake.git
-cd DeepFake
-
 # Create virtual environment
 python -m venv venv
 
@@ -356,12 +352,6 @@ Contributions are welcome! Please follow these steps:
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 

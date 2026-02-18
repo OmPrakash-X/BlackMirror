@@ -223,3 +223,62 @@ export const getJobStatus = catchAsyncErrors(async (req, res, next) => {
     processingTime: job.processingTime,
   });
 });
+
+// ✅ Upload audio file & create analysis job
+export const uploadAndCreateAudioJob = catchAsyncErrors(async (req, res, next) => {
+  if (!req.file) return next(new ErrorHandler("No audio file uploaded", 400));
+
+  const allowedMime = ["audio/wav", "audio/mpeg", "audio/mp3", "audio/x-wav", "audio/wave"];
+  if (!allowedMime.includes(req.file.mimetype)) {
+    return next(new ErrorHandler("Only WAV and MP3 audio files are supported", 400));
+  }
+
+  // Upload to Cloudinary (audio resource type)
+  const cloudinaryResult = await uploadOnCloudinary(req.file.path, { resource_type: "video" });
+  // Cloudinary uses 'video' resource_type for audio files
+
+  if (!cloudinaryResult || !cloudinaryResult.secure_url) {
+    return next(new ErrorHandler("Failed to upload audio to Cloudinary", 500));
+  }
+
+  const fileUrl = cloudinaryResult.secure_url;
+
+  // Create job record
+  const job = await AnalysisJob.create({
+    userId: req.userId,
+    filename: req.file.originalname,
+    fileUrl,
+    mediaType: "audio",
+    status: "processing",
+  });
+
+  // Dispatch to ML audio inference service
+  try {
+    console.log("🔊 Sending audio job to ML service...");
+    await axios.post(
+      `${AI_SERVICE_URL}/api/analyze/audio`,
+      { jobId: job._id.toString(), fileUrl },
+      { timeout: 60000 }   // audio inference can take longer
+    );
+    console.log("✅ ML service accepted audio job:", job._id);
+  } catch (error) {
+    console.error("❌ Failed to send audio job to ML service:", error.message);
+    job.status = "failed";
+    job.results = { error: "Failed to initiate audio analysis", timestamp: new Date() };
+    await job.save();
+    return next(new ErrorHandler("Failed to initiate audio analysis", 500));
+  }
+
+  res.status(201).json({
+    success: true,
+    message: "Audio uploaded & analysis started",
+    job: {
+      id: job._id,
+      filename: job.filename,
+      mediaType: job.mediaType,
+      status: job.status,
+      createdAt: job.createdAt,
+    },
+    fileUrl,
+  });
+});

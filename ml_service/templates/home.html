@@ -1,268 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>BlackMirror</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackMirror | AI Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #111111;
+            --border: #333333;
+            --text: #ffffff;
+            --text-secondary: #888888;
+            --accent: #2563eb;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<style>
-*{box-sizing:border-box}
-body{
-    margin:0;
-    font-family:Inter,sans-serif;
-    color:#e5e7eb;
-    background:radial-gradient(circle at top, #0f172a, #020617 70%);
-}
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-/* HEADER */
-.header{
-    padding:18px 36px;
-    font-size:20px;
-    font-weight:800;
-    border-bottom:1px solid rgba(255,255,255,.08);
-}
+        /* Navbar */
+        nav {
+            width: 100%;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-/* LAYOUT */
-.main{
-    display:grid;
-    grid-template-columns: 1fr 1.1fr;
-    gap:30px;
-    padding:28px 36px;
-}
+        .logo {
+            font-weight: 600;
+            font-size: 18px;
+            letter-spacing: -0.5px;
+        }
 
-/* UPLOAD */
-.upload-card{
-    background:#020617;
-    border-radius:18px;
-    padding:26px;
-    border:1px solid rgba(255,255,255,.08);
-}
-.drop-zone{
-    border:2px dashed rgba(255,255,255,.25);
-    border-radius:16px;
-    height:200px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    cursor:pointer;
-}
-.drop-zone:hover{
-    border-color:#38bdf8;
-    background:rgba(56,189,248,.08);
-}
+        /* Main Content */
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 60px 20px;
+            text-align: center;
+        }
 
-/* PREVIEW */
-.preview-box{
-    margin-top:18px;
-}
-.preview-box img,
-.preview-box video{
-    width:100%;
-    max-height:220px;
-    border-radius:14px;
-    object-fit:contain;
-    border:1px solid rgba(255,255,255,.08);
-}
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
 
-/* BUTTONS */
-button{
-    width:100%;
-    padding:12px;
-    margin-top:14px;
-    border-radius:12px;
-    font-weight:700;
-    border:none;
-    cursor:pointer;
-}
-.analyze{background:#2563eb;color:white}
-.reset{
-    background:transparent;
-    border:1px solid rgba(255,255,255,.2);
-    color:#9ca3af;
-}
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
 
-/* RESULTS */
-.result-panel{
-    background:linear-gradient(180deg,#1f2937,#020617);
-    border-radius:20px;
-    padding:26px;
-    border:1px solid rgba(255,255,255,.1);
-}
-.status{
-    background:rgba(34,197,94,.18);
-    color:#22c55e;
-    padding:8px 14px;
-    border-radius:10px;
-    font-weight:600;
-    margin-bottom:18px;
-    display:inline-block;
-}
+        /* Upload Area */
+        .upload-box {
+            background: var(--surface);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            position: relative;
+        }
 
-/* GAUGE */
-.gauge{
-    position:relative;
-    width:240px;
-    margin:20px auto 26px;
-}
-.gauge svg{transform:rotate(-90deg)}
-.gauge-value{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:40px;
-    font-weight:800;
-}
+        .upload-box:hover {
+            border-color: #666;
+        }
 
-/* BARS */
-.bar{margin-bottom:14px}
-.bar small{
-    display:flex;
-    justify-content:space-between;
-    margin-bottom:6px;
-}
-.progress{
-    height:10px;
-    background:#020617;
-    border-radius:10px;
-    overflow:hidden;
-}
-.real{background:#38bdf8;height:100%}
-.fake{background:#fb7185;height:100%}
+        .icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
 
-/* RESULT MEDIA */
-.result-media{
-    margin-top:16px;
-}
-.result-media img,
-.result-media video{
-    width:100%;
-    max-height:220px;
-    border-radius:14px;
-    object-fit:contain;
-    border:1px solid rgba(255,255,255,.1);
-}
+        .btn {
+            background: #fff;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
 
-/* RAW */
-.raw-box{
-    background:rgba(255,255,255,.06);
-    padding:16px;
-    border-radius:14px;
-    text-align:center;
-    margin-top:18px;
-}
-.raw-box h2{
-    margin:6px 0;
-    font-size:28px;
-}
-</style>
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            margin-top: 15px;
+        }
+
+        .btn-secondary:hover {
+            color: var(--text);
+            border-color: #666;
+        }
+
+        /* Result Section */
+        .result-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .result-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .verdict-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .verdict-real {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        .verdict-fake {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .image-preview img,
+        .image-preview video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .stats {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .stat-item h3 {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .stat-item p {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #222;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="header">Veritas AI | Deepfake Detector</div>
+    <nav>
+        <div class="logo">BlackMirror</div>
+        <div style="font-size: 12px; color: #666;">v2.0</div>
+    </nav>
 
-<div class="main">
+    <div class="container">
 
-<!-- LEFT -->
-<div class="upload-card">
-<form action="/predict" method="post" enctype="multipart/form-data">
+        <!-- Initial Upload State -->
+        {% if not result %}
+        <h1>Analyze Media</h1>
+        <p class="subtitle">Upload an image or video to check for deepfake manipulation.</p>
 
-<label class="drop-zone">
-    ☁️ <strong>Select Image or Video</strong>
-    <small>JPG, PNG, MP4</small>
-    <input type="file" name="image" id="fileInput" hidden required>
-</label>
+        <form action="/predict" method="post" enctype="multipart/form-data">
+            <label class="upload-box">
+                <div class="icon">Start Analysis</div>
+                <div style="margin-bottom: 20px; color: #888; font-size: 14px;">
+                    Drop your file here or click to browse
+                </div>
+                <input type="file" name="image" onchange="this.form.submit()" hidden required accept="image/*,video/*">
+                <div class="btn">Select File</div>
+            </label>
+        </form>
+        {% endif %}
 
-<button class="analyze" type="submit">Analyze</button>
-<button type="button" class="reset" onclick="window.location.href='/'">Reset</button>
+        <!-- Result State -->
+        {% if result %}
 
-<!-- 🔥 PREVIEW UNDER RESET -->
-<div class="preview-box" id="previewBox">
-<p style="opacity:.6">Preview will appear here</p>
-</div>
+        {% set is_fake = result.fake_percent >= 50 %}
+        {% set label = 'Potential Deepfake' if is_fake else 'Likely Authentic' %}
+        {% set badge_class = 'verdict-fake' if is_fake else 'verdict-real' %}
+        {% set color = '#ef4444' if is_fake else '#22c55e' %}
 
-</form>
-</div>
+        <h1 style="margin-bottom: 5px;">Analysis Complete</h1>
+        <p class="subtitle" style="margin-bottom: 20px;">Review the detection results below.</p>
 
-<!-- RIGHT RESULTS -->
-<div class="result-panel">
+        <div class="result-card">
+            <div class="result-header">
+                <span style="font-weight: 500; font-size: 14px;">{{ result.file }}</span>
+                <span class="verdict-badge {{ badge_class }}">{{ label }}</span>
+            </div>
 
-{% if result is not none %}
-<div class="status">✔ Analysis Complete</div>
+            <div class="image-preview" style="flex-direction: column; background: #000; padding: 0;">
+                <div style="width: 100%; height: 300px; display: flex; align-items: center; justify-content: center;">
+                    {% if result.file.endswith('.mp4') %}
+                    <video controls src="{{ url_for('static', filename='uploads/' + result.file) }}"
+                        style="max-height: 100%; max-width: 100%;"></video>
+                    {% else %}
+                    <img src="{{ url_for('static', filename='uploads/' + result.file) }}"
+                        style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                    {% endif %}
+                </div>
 
-<div class="gauge">
-<svg width="240" height="240">
-<circle cx="120" cy="120" r="100" stroke="#1e293b" stroke-width="18" fill="none"/>
-<circle cx="120" cy="120" r="100"
- stroke="#38bdf8"
- stroke-width="18"
- fill="none"
- stroke-dasharray="628"
- stroke-dashoffset="{{ 628 - (result.real_percent/100)*628 }}"
- stroke-linecap="round"/>
-</svg>
-<div class="gauge-value">{{ result.real_percent }}%</div>
-</div>
+                {% if result.file.endswith('.mp4') %}
+                <div
+                    style="width: 100%; padding: 10px; border-top: 1px solid var(--border); background: var(--surface); text-align: center;">
+                    <a href="{{ url_for('static', filename='uploads/' + result.file) }}" download class="btn"
+                        style="display: inline-block; text-decoration: none; background: #333; color: white; padding: 8px 16px; font-size: 12px;">Download
+                        Annotated Video</a>
+                </div>
+                {% endif %}
+            </div>
 
-<div class="bar">
-<small><span>Real Confidence</span><span>{{ result.real_percent }}%</span></small>
-<div class="progress"><div class="real" style="width:{{ result.real_percent }}%"></div></div>
-</div>
+            <div class="stats">
+                <div class="stat-item">
+                    <h3>Authenticity Score</h3>
+                    <p style="color: {{ '#22c55e' if not is_fake else '#666' }}">{{ result.real_percent }}%</p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ result.real_percent }}%; background: #22c55e;"></div>
+                    </div>
+                </div>
 
-<div class="bar">
-<small><span>Fake Probability</span><span>{{ result.fake_percent }}%</span></small>
-<div class="progress"><div class="fake" style="width:{{ result.fake_percent }}%"></div></div>
-</div>
+                <div class="stat-item">
+                    <h3>Fake Probability</h3>
+                    <p style="color: {{ '#ef4444' if is_fake else '#666' }}">{{ result.fake_percent }}%</p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ result.fake_percent }}%; background: #ef4444;"></div>
+                    </div>
+                </div>
+            </div>
 
-<!-- 🔥 ANALYSED MEDIA UNDER FAKE PROBABILITY -->
-<div class="result-media">
-{% if result.file.endswith('.mp4') %}
-<video controls>
-    <source src="{{ url_for('static', filename='uploads/' + result.file) }}">
-</video>
-{% else %}
-<img src="{{ url_for('static', filename='uploads/' + result.file) }}">
-{% endif %}
-</div>
+            <div style="padding: 20px; border-top: 1px solid var(--border); background: #0a0a0a;">
+                <p style="font-size: 13px; color: #666; line-height: 1.5;">
+                    AI Analysis based on model confidence of <strong>{{ result.raw_prob }}</strong>.
+                    {% if is_fake %}
+                    Higher probability suggests synthetic generation or manipulation.
+                    {% else %}
+                    Lower probability suggests no significant artifacts detected.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
 
-<div class="raw-box">
-<small>Raw Problem Score</small>
-<h2>{{ result.raw_prob }}</h2>
-<small>0.0 – 1.0</small>
-</div>
+        <button class="btn btn-secondary" onclick="window.location.href='/'">Analyze Another File</button>
+        {% endif %}
 
-{% else %}
-<p style="opacity:.6">Upload media to view analysis results.</p>
-{% endif %}
-
-</div>
-</div>
-
-<script>
-const input=document.getElementById("fileInput");
-const preview=document.getElementById("previewBox");
-
-input.addEventListener("change",()=>{
-    preview.innerHTML="";
-    const file=input.files[0];
-    if(!file) return;
-    const url=URL.createObjectURL(file);
-
-    if(file.type.startsWith("video")){
-        const v=document.createElement("video");
-        v.src=url; v.controls=true;
-        preview.appendChild(v);
-    }else{
-        const i=document.createElement("img");
-        i.src=url;
-        preview.appendChild(i);
-    }
-});
-</script>
+    </div>
 
 </body>
+
 </html>

@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Upload, Eye, Zap, ArrowRight, FileImage, FileVideo, BarChart3 } from "lucide-react";
+import { Upload, Eye, Zap, ArrowRight, FileImage, FileVideo, BarChart3, Music } from "lucide-react";
 
 const DashBoard = () => {
   const navigate = useNavigate();
-  
+
   return (
     <section className="py-24 px-4 sm:px-6 relative overflow-hidden min-h-screen">
       {/* Background */}
@@ -27,13 +27,13 @@ const DashBoard = () => {
             {new Date().toLocaleString()} UTC | STATUS: OPERATIONAL
           </div>
         </div>
-          
-          {/* Analysis Process Preview */}
+
+        {/* Analysis Process Preview */}
         <div className="bg-black/40 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 sm:p-8 mb-12">
           <h3 className="text-2xl font-bold text-white mb-6 text-center">
             What Happens During Analysis
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               {
@@ -44,7 +44,7 @@ const DashBoard = () => {
                 color: "text-blue-400"
               },
               {
-                step: "02", 
+                step: "02",
                 title: "Process",
                 description: "AI analyzes facial geometry & temporal consistency",
                 icon: Zap,
@@ -92,7 +92,7 @@ const DashBoard = () => {
               Upload & Analyze Media
             </h2>
             <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
-              Upload your images or videos to get instant deepfake detection results with detailed forensic analysis and threat assessment reports
+              Upload your images, videos, or audio files to get instant deepfake detection results with detailed forensic analysis and threat assessment reports
             </p>
 
 
@@ -106,11 +106,15 @@ const DashBoard = () => {
                 <FileVideo className="w-5 h-5 text-purple-400" />
                 <span className="text-sm">Videos</span>
               </div>
+              <div className="flex items-center gap-2 text-gray-300">
+                <Music className="w-5 h-5 text-yellow-400" />
+                <span className="text-sm">Audio</span>
+              </div>
             </div>
 
             {/* Main CTA Button */}
-            <Button 
-              onClick={() => navigate("/analyze")} 
+            <Button
+              onClick={() => navigate("/analyze")}
               className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold py-4 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all duration-200 group mb-6"
             >
               Start Analysis
@@ -119,16 +123,16 @@ const DashBoard = () => {
 
             {/* Supported formats */}
             <div className="text-sm text-gray-500 space-y-1">
-              <div>Supported formats: JPG, PNG, MP4, MOV • Max file size: 50MB</div>
+              <div>Supported formats: JPG, PNG, MP4, MOV, WAV, MP3 • Max file size: 50MB</div>
               <div>Drag & drop enabled • Multiple file upload • Instant results</div>
             </div>
           </div>
         </div>
 
-      
 
-        
-     
+
+
+
 
         {/* System Status Bar */}
         <div className="mt-12 pt-6 border-t border-gray-700/30">
