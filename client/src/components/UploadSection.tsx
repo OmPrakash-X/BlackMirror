@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Upload, FileVideo, FileImage, Loader2, Shield, AlertTriangle } from "lucide-react";
+import { Upload, FileVideo, FileImage, Loader2, Shield, AlertTriangle, Music } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
@@ -22,14 +22,15 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
     // Validate file type
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
-    
-    if (!isImage && !isVideo) {
-      toast.error("Invalid file type. Please upload an image or video.");
+    const isAudio = file.type.startsWith('audio/') || file.name.endsWith('.mp3') || file.name.endsWith('.wav');
+
+    if (!isImage && !isVideo && !isAudio) {
+      toast.error("Invalid file type. Please upload an image, video, or audio file.");
       return;
     }
 
-    const mediaType = isImage ? 'image' : 'video';
-    
+    const mediaType = isImage ? 'image' : (isVideo ? 'video' : 'audio');
+
     setIsUploading(true);
     setUploadProgress(10);
 
@@ -59,7 +60,7 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
         toast.success("🎯 File uploaded! AI analysis started...", {
           duration: 4000,
         });
-        
+
         onUploadSuccess({
           job: response.data.job,
           fileUrl: response.data.fileUrl,
@@ -69,10 +70,10 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
 
     } catch (error: any) {
       console.error('Upload failed:', error);
-      
+
       const errorMessage = error.response?.data?.message || 'Upload failed';
       toast.error(`❌ Upload failed: ${errorMessage}`);
-      
+
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -82,8 +83,9 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpg', '.jpeg', '.png'],
-      'video/*': ['.mp4', '.avi', '.mov', '.mkv', '.webm']
+      'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
+      'video/*': ['.mp4', '.avi', '.mov', '.mkv', '.webm'],
+      'audio/*': ['.mp3', '.wav', '.flac', '.m4a']
     },
     maxFiles: 1,
     maxSize: 50 * 1024 * 1024, // 50MB
@@ -114,15 +116,15 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
         className={`
           relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer
           transition-all duration-300 backdrop-blur-xl
-          ${isDragActive 
-            ? 'border-green-400 bg-green-400/10' 
+          ${isDragActive
+            ? 'border-green-400 bg-green-400/10'
             : 'border-gray-600 bg-white/5 hover:border-orange-400 hover:bg-orange-400/5'
           }
           ${isUploading ? 'pointer-events-none opacity-70' : ''}
         `}
       >
         <input {...getInputProps()} />
-        
+
         {isUploading ? (
           <div className="space-y-4">
             <Loader2 className="w-16 h-16 mx-auto text-orange-400 animate-spin" />
@@ -145,14 +147,15 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
               <FileImage className="w-12 h-12 text-blue-400" />
               <Upload className="w-12 h-12 text-green-400" />
               <FileVideo className="w-12 h-12 text-purple-400" />
+              <Music className="w-12 h-12 text-yellow-400" />
             </div>
-            
+
             <div className="space-y-2">
               <p className="text-xl font-semibold text-white">
                 {isDragActive ? "Drop files here" : "Drag & drop or click to select"}
               </p>
               <p className="text-gray-400">
-                Supports images (JPG, PNG) and videos (MP4, MKV)
+                Supports images, videos, and audio (MP3, WAV)
               </p>
               <p className="text-sm text-gray-500">Maximum file size: 50MB</p>
             </div>
@@ -178,7 +181,7 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
       </div>
 
       {/* Supported Formats */}
-      <div className="mt-8 grid grid-cols-2 gap-4 text-center">
+      <div className="mt-8 grid grid-cols-3 gap-4 text-center">
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
           <FileImage className="w-8 h-8 text-blue-400 mx-auto mb-2" />
           <h3 className="font-semibold text-white mb-1">Images</h3>
@@ -188,6 +191,11 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onUploadSuccess }) => {
           <FileVideo className="w-8 h-8 text-purple-400 mx-auto mb-2" />
           <h3 className="font-semibold text-white mb-1">Videos</h3>
           <p className="text-sm text-gray-400">MP4, MKV</p>
+        </div>
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
+          <Music className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+          <h3 className="font-semibold text-white mb-1">Audio</h3>
+          <p className="text-sm text-gray-400">MP3, WAV</p>
         </div>
       </div>
     </div>

@@ -42,15 +42,23 @@ export const uploadAndCreateJob = catchAsyncErrors(async (req, res, next) => {
   try {
     console.log("🤖 Sending job to AI service...");
 
+    const fileType = req.body.mediaType || "image";
+    let endpoint = "/api/analyze";
+    
+    // Route audio to separate endpoint if needed, or handle in main
+    if (fileType === "audio") {
+      endpoint = "/api/analyze/audio";
+    }
+
     const aiResponse = await axios.post(
-      `${AI_SERVICE_URL}/api/analyze`,
+      `${AI_SERVICE_URL}${endpoint}`,
       {
         jobId: job._id.toString(),
         fileUrl: fileUrl,
-        fileType: req.body.mediaType || "image",
+        fileType: fileType,
       },
       {
-        timeout: 30000,
+        timeout: 120000, // Increased timeout for large files
       }
     );
 
