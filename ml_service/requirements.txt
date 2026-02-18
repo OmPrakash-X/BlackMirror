@@ -17,3 +17,4 @@ requests==2.31.0
 transformers>=4.35.0
 soundfile
 pydub
+--extra-index-url https://download.pytorch.org/whl/cpu
