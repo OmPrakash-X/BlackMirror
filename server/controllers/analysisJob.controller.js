@@ -45,10 +45,10 @@ export const uploadAndCreateJob = catchAsyncErrors(async (req, res, next) => {
     const fileType = req.body.mediaType || "image";
     let endpoint = "/api/analyze";
     
-    // Route audio to separate endpoint if needed, or handle in main
-    if (fileType === "audio") {
-      endpoint = "/api/analyze/audio";
-    }
+    // Unified endpoint for all media types
+    // if (fileType === "audio") {
+    //   endpoint = "/api/analyze/audio";
+    // }
 
     const aiResponse = await axios.post(
       `${AI_SERVICE_URL}${endpoint}`,

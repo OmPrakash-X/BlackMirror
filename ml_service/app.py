@@ -17,6 +17,7 @@ from io import BytesIO
 import time
 
 from video_predictor import run_advanced_video_prediction
+from audio_predictor import predict_audio
 
 # ---------------- CONFIG ----------------
 BASE_DIR = Path(__file__).resolve().parent
@@ -31,6 +32,7 @@ MODEL_PATHS = [
 # ✅ Added .webp support
 ALLOWED_IMG = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
 ALLOWED_VIDEO = {".mp4", ".avi", ".mov", ".mkv"}
+ALLOWED_AUDIO = {".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a"}
 
 DEFAULT_IMG_SIZE = 224
 DEFAULT_MODEL_NAME = "efficientnet_b0"
@@ -267,6 +269,8 @@ def api_analyze():
             ext = '.webp'
         elif '.mp4' in file_url.lower() or 'video/mp4' in content_type:
             ext = '.mp4'
+        elif '.mp3' in file_url.lower() or 'audio' in content_type:
+            ext = '.mp3'
         elif '.jpg' in file_url.lower() or '.jpeg' in file_url.lower() or 'jpeg' in content_type:
             ext = '.jpg'
         elif '.png' in file_url.lower() or 'png' in content_type:
@@ -362,6 +366,37 @@ def api_analyze():
                 "frameCount": video_result.get("frames_analyzed", 0)
             }
         
+        # Process AUDIO
+        elif file_type == 'audio' or ext in ALLOWED_AUDIO:
+            audio_result = predict_audio(str(temp_path))
+            
+            processing_time = audio_result["processing_time_ms"] / 1000.0
+            fake_p = audio_result["fake_probability"] * 100
+            real_p = audio_result["real_probability"] * 100
+            raw_prob = audio_result["fake_probability"]
+            
+            if fake_p >= 70:
+                risk_level = "HIGHRISK"
+            elif fake_p >= 40:
+                risk_level = "SUSPICIOUS"
+            else:
+                risk_level = "LOW"
+            
+            result_data = {
+                "score": round(raw_prob, 4),
+                "confidence": audio_result["confidence"],
+                "riskLevel": risk_level,
+                "modelVersions": {"Wav2Vec2": "1.0"},
+                "tamperRegions": [],
+                "processingTime": processing_time,
+                "metadata": {
+                    "fake_percent": fake_p,
+                    "real_percent": real_p,
+                    "prediction": audio_result["label"],
+                    "original_format": ext
+                }
+            }
+
         else:
             return jsonify({"error": f"Unsupported file type: {ext}"}), 400
         
@@ -414,4 +449,5 @@ if __name__ == "__main__":
     print(f"📁 Uploads directory: {UPLOADS}")
     print(f"🤖 Supported image formats: {ALLOWED_IMG}")
     print(f"🎬 Supported video formats: {ALLOWED_VIDEO}")
+    print(f"🎙️ Supported audio formats: {ALLOWED_AUDIO}")
     app.run(host="0.0.0.0", port=port, debug=False)

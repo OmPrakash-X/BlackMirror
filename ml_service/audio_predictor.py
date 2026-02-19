@@ -70,13 +70,21 @@ def load_audio_model() -> bool:
 
 
 # ── Audio download + decode ─────────────────────────────────────────────────
-def _download_and_prepare(url: str):
-    resp = requests.get(url, timeout=30)
-    resp.raise_for_status()
-    raw_bytes = resp.content
+def _download_and_prepare(source: str):
+    import os
+    
+    # Check if local file
+    if os.path.exists(source):
+        with open(source, "rb") as f:
+            raw_bytes = f.read()
+    else:
+        # Assume URL
+        resp = requests.get(source, timeout=30)
+        resp.raise_for_status()
+        raw_bytes = resp.content
 
     # MP3 → WAV via pydub (avoids torchcodec issues)
-    is_mp3 = (url.lower().endswith(".mp3") or 
+    is_mp3 = (str(source).lower().endswith(".mp3") or 
               raw_bytes[:3] == b'ID3' or 
               raw_bytes[:2] == b'\xff\xfb')
 

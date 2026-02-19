@@ -10,6 +10,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src }) => {
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
+    const [volume, setVolume] = useState(1);
     const audioRef = useRef<HTMLAudioElement>(null);
 
     const togglePlay = () => {
@@ -45,10 +46,21 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src }) => {
         }
     };
 
+    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newVolume = parseFloat(e.target.value);
+        if (audioRef.current) {
+            audioRef.current.volume = newVolume;
+        }
+        setVolume(newVolume);
+        setIsMuted(newVolume === 0);
+    };
+
     const toggleMute = () => {
         if (audioRef.current) {
-            audioRef.current.muted = !isMuted;
-            setIsMuted(!isMuted);
+            const newMutedState = !isMuted;
+            audioRef.current.muted = newMutedState;
+            setIsMuted(newMutedState);
+            // Optional: Reset volume to 1 if unmuting from 0, or just keep previous volume
         }
     };
 
@@ -165,12 +177,26 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src }) => {
                     {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-1" />}
                 </button>
 
-                <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+                <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full group/volume">
                     <button onClick={toggleMute} className="text-gray-400 hover:text-white transition-colors">
-                        {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                        {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                     </button>
-                    <div className="w-16 h-1 bg-gray-700 rounded-full overflow-hidden">
-                        <div className="w-3/4 h-full bg-gray-400" />
+                    <div className="w-20 relative flex items-center">
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={isMuted ? 0 : volume}
+                            onChange={handleVolumeChange}
+                            className="volume-slider absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gray-400 transition-all duration-200 group-hover/volume:bg-orange-400"
+                                style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
