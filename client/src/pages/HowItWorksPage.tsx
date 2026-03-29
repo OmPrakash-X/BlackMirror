@@ -110,9 +110,10 @@ export default function HowItWorksPage() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "16px 32px",
-          background: "rgba(5,5,8,0.88)",
-          backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(0,245,255,0.1)",
+          background: "rgba(255, 255, 255, 0.02)",
+          backdropFilter: "blur(20px) saturate(200%)",
+          WebkitBackdropFilter: "blur(20px) saturate(200%)",
+          boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.8)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

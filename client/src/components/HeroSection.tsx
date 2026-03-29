@@ -54,9 +54,10 @@ const HeroSection = ({ onGetStarted, onLogin }: HeroSectionProps) => {
       {/* ── TOP NAVBAR ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
         style={{
-          background: "rgba(0,0,0,0.75)",
-          backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(0,255,0,0.12)",
+          background: "rgba(255, 255, 255, 0.02)",
+          backdropFilter: "blur(20px) saturate(200%)",
+          WebkitBackdropFilter: "blur(20px) saturate(200%)",
+          boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.8)",
         }}
       >
         {/* Logo */}

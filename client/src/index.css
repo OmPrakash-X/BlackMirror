@@ -119,22 +119,17 @@
   }
 }
 
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; } 
-::-webkit-scrollbar-track { background: #0a0f0c; border-radius: 6px; } 
-::-webkit-scrollbar-thumb {
-  background: #10b981;           
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #2dd4bf;           
+fixes
+* {
+  -ms-overflow-style: none;  
+  scrollbar-width: none;   
 }
 
-/* Selection */
+*::-webkit-scrollbar {
+  display: none;            
+}
+
 ::selection { background: rgba(45, 212, 191, 0.18); color: #eefdf7; } 
 ::-moz-selection { background: rgba(45, 212, 191, 0.18); color: #eefdf7; } 
 
-/* Form control accent */
-:root { accent-color: #10b981; } 
-
+:root { accent-color: #10b981; }
