@@ -142,7 +142,6 @@ Create a `.env` file in the client directory:
 ```env
 # API Configuration
 VITE_API_URL=http://localhost:5000
-
 ```
 
 ---
